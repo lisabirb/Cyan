@@ -1,4 +1,4 @@
-local component, computer, unicode, math, bootFiles, bootCandidates, keys, userChecked, width, height, gpu, screen, redraw, lines = component, computer, unicode, math, {"/init.lua", "/OS.lua"}, {}, {}
+local component, computer, unicode, math, bootCandidates, keys, userChecked, width, height, gpu, screen, redraw, lines = component, computer, unicode, math, {}, {}, {}
 
 local function pullSignal(timeout)
     local signal = {computer.pullSignal(timeout)}
@@ -230,16 +230,20 @@ local function addCandidate(address)
             end
         end
 
-        for j = 1, #bootFiles do
-            if proxy.exists(bootFiles[j]) then
-                bootFile = bootFile or bootFiles[j]
-                allBootFiles[#allBootFiles + 1] = {
-                    bootFiles[j],
-                    function()
-                        bootFile = bootFiles[j]
-                        bootCandidates[i].b()
-                    end
-                }
+        local fileList = proxy.list("/")
+        if fileList then
+            for _, name in ipairs(fileList) do
+                if not proxy.isDirectory("/" .. name) and name:match("%.lua$") then
+                    local fullPath = "/" .. name
+                    bootFile = bootFile or fullPath
+                    allBootFiles[#allBootFiles + 1] = {
+                        fullPath,
+                        function()
+                            bootFile = fullPath
+                            bootCandidates[i].b()
+                        end
+                    }
+                end
             end
         end
     end
@@ -280,50 +284,6 @@ local function drawElements(elements, y, spaces, borderHeight, drawSelected, onD
     end
 end
 
-local function shell(env, data, str, text)
-    clear()
-    env = setmetatable({
-        print = function(...)
-            text = table.pack(...)
-            for i = 1, text.n do
-                if type(text[i]):match"able" then
-                    str = ''
-        
-                    for k, v in pairs(text[i]) do
-                        str = str .. tostring(k) .. "    " .. tostring(v) .. "\n"
-                    end
-        
-                    text[i] = str
-                end
-
-                text[i] = tostring(text[i])
-            end
-            split(table.concat(text, "    "), 1)
-        
-            for i = 1, #lines do
-                gpu.copy(1, 1, width, height - 1, 0, -1)
-                fill(1, height - 1, width, 1)
-                set(1, height - 1, lines[i])
-            end
-        end,
-        proxy = proxy,
-        sleep = function(timeout)
-            sleep(timeout, 32, error)
-        end
-    }, {__index = _G})
-
-    ::LOOP::
-    data = input("> ", height, F, data, 0xffffff, env)
-
-    if data then
-        env.print("> " .. data)
-        fill(1, height, width, 1)
-        set(1, height, ">")
-        env.print(select(2, execute(data, "=shell", env)))
-        goto LOOP
-    end
-end
-
 local function bootloader()
     userChecked = 1, not gpu and error"No drives available"
     ::UPDATE::
@@ -333,7 +293,6 @@ local function bootloader()
         s = 1,
         p = 1,
         {"Halt", computer.shutdown},
-        {"Shell", shell},
         proxy"net" and {"Netboot", function()
             clear()
             centrizedSet(height / 2 - 1, "Netboot", F, 0xffffff)
