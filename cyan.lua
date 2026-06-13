@@ -38,14 +38,14 @@ local function sleep(timeout, breakCode, onBreak, deadline, signalType, code, _)
 end
 
 local function set(x, y, string, background, foreground)
-    gpu.setBackground(background or 0x002b36)
-    gpu.setForeground(foreground or 0x8cb9c5)
+    gpu.setBackground(background or 0x000000)
+    gpu.setForeground(foreground or 0x00ff00)
     gpu.set(x, y, string)
 end
 
 local function fill(x, y, w, h, background, foreground)
-    gpu.setBackground(background or 0x002b36)
-    gpu.setForeground(foreground or 0x8cb9c5)
+    gpu.setBackground(background or 0x000000)
+    gpu.setForeground(foreground or 0x00ff00)
     gpu.fill(x, y, w, h, " ")
 end
 
@@ -68,8 +68,8 @@ local function rebindGPU()
         gpu.bind((screen.address))
     end
     
-    gpu.setPaletteColor(9, 0x002b36)
-    gpu.setPaletteColor(11, 0x8cb9c5)
+    gpu.setPaletteColor(9, 0x000000)
+    gpu.setPaletteColor(11, 0x00ff00)
 
     local aspectWidth, aspectHeight, proportion = screen.getAspectRatio()
     width, height = gpu.maxResolution()
@@ -89,7 +89,7 @@ local function status(text, title, wait, breakCode, onBreak, y)
     y = math.ceil(height / 2 - #lines / 2)
 
     if title then
-        centrizedSet(y - 1, title, 0x002b36, 0xffffff)
+        centrizedSet(y - 1, title, 0x000000, 0xffffff)
         y = y + 1
     end
     for i = 1, #lines do
@@ -105,7 +105,7 @@ end
 
 local function input(prefix, y, centrized, historyText, foreground)
     local text, prefixLen, cursorPos, cursorState, cursorX, x, signalType, char, code, _ = "", unicode.len(prefix), 1, 1
-    foreground = foreground or 0x8cb9c5
+    foreground = foreground or 0x00ff00
 
     ::LOOP::
         x = centrized and centrize(unicode.len(text) + prefixLen) or 1
@@ -114,7 +114,7 @@ local function input(prefix, y, centrized, historyText, foreground)
         fill(1, y, width, 1)
         set(x, y, prefix .. text, F, foreground)
         if cursorX <= width then
-            set(cursorX, y, gpu.get(cursorX, y), cursorState and foreground or 0x002b36, cursorState and 0x002b36 or foreground)
+            set(cursorX, y, gpu.get(cursorX, y), cursorState and foreground or 0x000000, cursorState and 0x000000 or foreground)
         end
 
         signalType, _, char, code = pullSignal(.5)  
@@ -165,8 +165,8 @@ local function execute(code, stdin, env, palette, call)
         if palette and gpu then
             sleep(.3)
             fill(1, 1, width or 0, height or 0, 0)
-            gpu.setPaletteColor(9, 0x969696)
-            gpu.setPaletteColor(11, 0xb4b4b4)
+            gpu.setPaletteColor(9, 0x000000)
+            gpu.setPaletteColor(11, 0xffffff)
         end
 
         return call(chunk, debug.traceback)
@@ -274,10 +274,10 @@ local function drawElements(elements, y, spaces, borderHeight, drawSelected, onD
 
     for i = 1, #elements do
         if elements.s == i and drawSelected then
-            fill(x - spaces / 2, y - math.floor(borderHeight / 2), unicode.len(elements[i][1]) + spaces, borderHeight, 0x8cb9c5)
-            set(x, y, elements[i][1], 0x8cb9c5, 0x002b36)
+            fill(x - spaces / 2, y - math.floor(borderHeight / 2), unicode.len(elements[i][1]) + spaces, borderHeight, 0x00ff00)
+            set(x, y, elements[i][1], 0x00ff00, 0x000000)
         else
-            set(x, y, elements[i][1], 0x002b36, 0x8cb9c5)
+            set(x, y, elements[i][1], 0x000000, 0x00ff00)
         end
 
         x = x + unicode.len(elements[i][1]) + spaces
@@ -296,7 +296,7 @@ local function bootloader()
         proxy"net" and {"Netboot", function()
             clear()
             centrizedSet(height / 2 - 1, "Netboot", F, 0xffffff)
-            url = input("URL: ", height / 2 + 1, 1, F, 0x8cb9c5)
+            url = input("URL: ", height / 2 + 1, 1, F, 0x00ff00)
 
             if url and #url > 0 then
                 local handle, data, chunk = proxy"net".request(url, F, F, {["user-agent"]="Netboot"}), ""
@@ -376,7 +376,7 @@ local function bootloader()
                         elementsPrimary[correction] = {"Rename", function()
                             clear()
                             centrizedSet(height / 2 - 1, "Rename", F, 0xffffff)
-                            newLabel = input("Enter new name: ", height / 2 + 1, 1, F, 0x8cb9c5)
+                            newLabel = input("Enter new name: ", height / 2 + 1, 1, F, 0x00ff00)
                 
                             if newLabel and #newLabel > 0 and pcall(drive.setLabel, newLabel) then
                                 drive.setLabel(newLabel)
